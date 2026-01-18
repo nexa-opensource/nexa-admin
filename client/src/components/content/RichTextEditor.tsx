@@ -10,13 +10,17 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState } from "react";
 
 interface RichTextEditorProps {
   className?: string;
   minHeight?: string;
+  defaultValue?: string;
 }
 
-export function RichTextEditor({ className, minHeight = "min-h-[400px]" }: RichTextEditorProps) {
+export function RichTextEditor({ className, minHeight = "min-h-[400px]", defaultValue = "" }: RichTextEditorProps) {
+  const [content, setContent] = useState(defaultValue);
+  
   const ToolbarButton = ({ icon: Icon, label, isActive = false }: { icon: any, label: string, isActive?: boolean }) => (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -104,7 +108,12 @@ export function RichTextEditor({ className, minHeight = "min-h-[400px]" }: RichT
         </div>
       </div>
       
-      <div className={cn("p-6 prose prose-neutral dark:prose-invert max-w-none focus:outline-none bg-background", minHeight)}>
+      <div 
+        className={cn("p-6 prose prose-neutral dark:prose-invert max-w-none focus:outline-none bg-background", minHeight)}
+        contentEditable
+        onInput={(e) => setContent(e.currentTarget.textContent || "")}
+        suppressContentEditableWarning={true}
+      >
         <p className="lead">Portal is a comprehensive documentation and content management system designed for modern engineering teams.</p>
         
         <h2>Why Portal?</h2>
@@ -128,8 +137,8 @@ export function RichTextEditor({ className, minHeight = "min-h-[400px]" }: RichT
       
       <div className="border-t p-2 px-4 text-xs text-muted-foreground flex justify-between bg-muted/10">
         <div className="flex gap-4">
-          <span>Words: 42</span>
-          <span>Characters: 286</span>
+          <span>Words: {content.trim().split(/\s+/).filter(w => w.length > 0).length}</span>
+          <span>Characters: {content.length}</span>
         </div>
         <div>
           Last saved: Just now

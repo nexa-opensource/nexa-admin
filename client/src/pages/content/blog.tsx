@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BLOG_POSTS, BlogPost } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, MoreHorizontal, Calendar, Clock, ArrowRight, ArrowLeft, Save, Eye, Settings, Globe, Image as ImageIcon, Tag, Hash, Share2, UploadCloud, Heart, MessageSquare, BarChart2, TrendingUp } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Calendar, Clock, ArrowRight, ArrowLeft, Save, Eye, Settings, Globe, Image as ImageIcon, Tag, Hash, Share2, UploadCloud, Heart, MessageSquare, BarChart2, TrendingUp, User, ThumbsUp, Send } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { RichTextEditor } from "@/components/content/RichTextEditor";
@@ -17,13 +17,38 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check } from "lucide-react";
+
+// Mock users for author selection
+const AUTHORS = [
+  { id: "1", name: "Sarah Chen", role: "Lead Engineer", avatar: "https://github.com/shadcn.png" },
+  { id: "2", name: "Marcus Johnson", role: "Product Designer", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus" },
+  { id: "3", name: "Alex Tech", role: "Developer Advocate", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" },
+  { id: "4", name: "Emily Writer", role: "Content Strategist", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emily" },
+];
+
+// Mock comments
+const COMMENTS = [
+  { id: "1", author: "Dev User", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dev", content: "Great article! The new features look amazing.", date: "2 hours ago", likes: 12 },
+  { id: "2", author: "Frontend Fan", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Fan", content: "Can't wait to try the new components. Is there a migration guide?", date: "5 hours ago", likes: 8 },
+  { id: "3", author: "React Lover", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=React", content: "This is exactly what we needed. Thanks for the hard work!", date: "1 day ago", likes: 24 },
+];
 
 export default function BlogPage() {
   const [view, setView] = useState<"list" | "edit">("list");
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [selectedAuthor, setSelectedAuthor] = useState(AUTHORS[0]);
+  const [openAuthorSelect, setOpenAuthorSelect] = useState(false);
 
   const handleEdit = (post?: BlogPost) => {
     setSelectedPost(post || null);
+    if (post) {
+      // In a real app, you'd match the author ID
+      const author = AUTHORS.find(a => a.name === post.author) || AUTHORS[0];
+      setSelectedAuthor(author);
+    }
     setView("edit");
   };
 
@@ -230,19 +255,101 @@ export default function BlogPage() {
                                   </div>
                                   <div className="grid gap-2">
                                      <Label>Author</Label>
-                                     <div className="flex items-center gap-2 border rounded-md p-2">
-                                        <Avatar className="h-6 w-6">
-                                           <AvatarImage src="https://github.com/shadcn.png" />
-                                           <AvatarFallback>SC</AvatarFallback>
-                                        </Avatar>
-                                        <span className="text-sm font-medium">Sarah Chen</span>
-                                        <Button variant="ghost" size="sm" className="ml-auto h-6 text-xs">Change</Button>
-                                     </div>
+                                     <Popover open={openAuthorSelect} onOpenChange={setOpenAuthorSelect}>
+                                        <PopoverTrigger asChild>
+                                          <Button variant="outline" role="combobox" aria-expanded={openAuthorSelect} className="w-full justify-between h-auto py-2">
+                                            <div className="flex items-center gap-2">
+                                              <Avatar className="h-6 w-6">
+                                                <AvatarImage src={selectedAuthor.avatar} />
+                                                <AvatarFallback>{selectedAuthor.name[0]}</AvatarFallback>
+                                              </Avatar>
+                                              <div className="flex flex-col items-start text-xs">
+                                                <span className="font-medium">{selectedAuthor.name}</span>
+                                                <span className="text-muted-foreground">{selectedAuthor.role}</span>
+                                              </div>
+                                            </div>
+                                            <MoreHorizontal className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[300px] p-0">
+                                          <Command>
+                                            <CommandInput placeholder="Search author..." />
+                                            <CommandList>
+                                              <CommandEmpty>No author found.</CommandEmpty>
+                                              <CommandGroup>
+                                                {AUTHORS.map((author) => (
+                                                  <CommandItem
+                                                    key={author.id}
+                                                    value={author.name}
+                                                    onSelect={() => {
+                                                      setSelectedAuthor(author);
+                                                      setOpenAuthorSelect(false);
+                                                    }}
+                                                  >
+                                                    <div className="flex items-center gap-2">
+                                                      <Avatar className="h-6 w-6">
+                                                        <AvatarImage src={author.avatar} />
+                                                        <AvatarFallback>{author.name[0]}</AvatarFallback>
+                                                      </Avatar>
+                                                      <div className="flex flex-col items-start text-xs">
+                                                        <span className="font-medium">{author.name}</span>
+                                                        <span className="text-muted-foreground">{author.role}</span>
+                                                      </div>
+                                                    </div>
+                                                    <Check
+                                                      className={cn(
+                                                        "ml-auto h-4 w-4",
+                                                        selectedAuthor.id === author.id ? "opacity-100" : "opacity-0"
+                                                      )}
+                                                    />
+                                                  </CommandItem>
+                                                ))}
+                                              </CommandGroup>
+                                            </CommandList>
+                                          </Command>
+                                        </PopoverContent>
+                                     </Popover>
                                   </div>
                                   <div className="grid gap-2">
-                                     <Label>Excerpt</Label>
-                                     <Textarea className="resize-none h-20" placeholder="Brief summary of the post..." defaultValue="We've rebuilt the entire library from the ground up. Better performance, more accessibility, and a brand new design system." />
+                                     <Label>Short Description (Excerpt)</Label>
+                                     <Textarea 
+                                        className="resize-none h-24" 
+                                        placeholder="Brief summary shown on blog cards..." 
+                                        defaultValue={selectedPost?.excerpt || "We've rebuilt the entire library from the ground up. Better performance, more accessibility, and a brand new design system."} 
+                                     />
+                                     <p className="text-xs text-muted-foreground text-right">0/160 characters</p>
                                   </div>
+                               </div>
+                            </div>
+
+                            <Separator />
+                            
+                            <div className="space-y-4">
+                               <h3 className="text-sm font-medium flex items-center gap-2 text-primary">
+                                  <MessageSquare className="h-4 w-4" /> Comments
+                               </h3>
+                               <div className="space-y-4">
+                                  {COMMENTS.map((comment) => (
+                                     <div key={comment.id} className="flex gap-3 text-sm border rounded-lg p-3 bg-muted/30">
+                                        <Avatar className="h-8 w-8">
+                                           <AvatarImage src={comment.avatar} />
+                                           <AvatarFallback>{comment.author[0]}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="space-y-1 flex-1">
+                                           <div className="flex items-center justify-between">
+                                              <span className="font-medium">{comment.author}</span>
+                                              <span className="text-xs text-muted-foreground">{comment.date}</span>
+                                           </div>
+                                           <p className="text-muted-foreground">{comment.content}</p>
+                                           <div className="flex items-center gap-2 pt-1">
+                                              <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                 <ThumbsUp className="h-3 w-3" />
+                                              </Button>
+                                              <span className="text-xs text-muted-foreground">{comment.likes}</span>
+                                           </div>
+                                        </div>
+                                     </div>
+                                  ))}
                                </div>
                             </div>
 
@@ -255,7 +362,7 @@ export default function BlogPage() {
                                <div className="grid gap-2">
                                   <Label>Cover Image</Label>
                                   <div className="aspect-video rounded-md border-2 border-dashed bg-muted flex flex-col items-center justify-center gap-2 hover:bg-muted/70 transition-colors cursor-pointer relative group overflow-hidden">
-                                     <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000" className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-40" />
+                                     <img src={selectedPost?.coverImage || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000"} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-40" />
                                      <div className="relative z-10 flex flex-col items-center gap-2">
                                         <UploadCloud className="h-8 w-8 text-muted-foreground" />
                                         <span className="text-xs text-muted-foreground font-medium">Click to upload or drag & drop</span>
@@ -264,44 +371,6 @@ export default function BlogPage() {
                                </div>
                             </div>
 
-                            <Separator />
-                            
-                            <div className="space-y-4">
-                               <h3 className="text-sm font-medium flex items-center gap-2 text-primary">
-                                  <Hash className="h-4 w-4" /> Taxonomy
-                               </h3>
-                               <div className="grid gap-2">
-                                  <Label>Tags</Label>
-                                  <Input placeholder="Add tags separated by comma..." defaultValue="Release, React, Design System" />
-                                  <div className="flex flex-wrap gap-2 mt-2">
-                                     {["Release", "React", "Design System"].map(tag => (
-                                        <Badge key={tag} variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors group">
-                                           {tag} <span className="ml-1 opacity-0 group-hover:opacity-100">×</span>
-                                        </Badge>
-                                     ))}
-                                  </div>
-                               </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-4">
-                               <h3 className="text-sm font-medium flex items-center gap-2 text-primary">
-                                  <Share2 className="h-4 w-4" /> Social Preview
-                               </h3>
-                               <Card className="overflow-hidden">
-                                  <div className="bg-muted aspect-[1.9/1] relative">
-                                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                                       <ImageIcon className="h-8 w-8 opacity-20" />
-                                    </div>
-                                  </div>
-                                  <CardContent className="p-3 space-y-1">
-                                     <p className="text-xs font-semibold text-muted-foreground">portal.dev</p>
-                                     <p className="text-sm font-bold leading-tight">Introducing ShadcnUIKit V2</p>
-                                     <p className="text-xs text-muted-foreground line-clamp-2">We've rebuilt the entire library from the ground up...</p>
-                                  </CardContent>
-                               </Card>
-                            </div>
                          </div>
                       </ScrollArea>
                    </SheetContent>
@@ -328,7 +397,7 @@ export default function BlogPage() {
                       <div className="group relative">
                          <div className="aspect-[21/9] rounded-xl overflow-hidden bg-muted border shadow-sm">
                             <img 
-                               src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000" 
+                               src={selectedPost?.coverImage || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000"} 
                                className="w-full h-full object-cover transition-opacity hover:opacity-90"
                             />
                          </div>
@@ -341,21 +410,21 @@ export default function BlogPage() {
                          <Textarea 
                             placeholder="Post Title" 
                             className="text-4xl md:text-5xl font-extrabold border-none px-0 shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/30 min-h-[60px] resize-none overflow-hidden bg-transparent leading-tight tracking-tight" 
-                            defaultValue="Introducing ShadcnUIKit V2"
+                            defaultValue={selectedPost?.title || "Introducing ShadcnUIKit V2"}
                          />
                          
                          <div className="flex items-center gap-3 text-sm text-muted-foreground border-b pb-8">
                             <Avatar className="h-8 w-8 ring-2 ring-background">
-                               <AvatarImage src="https://github.com/shadcn.png" />
-                               <AvatarFallback>SC</AvatarFallback>
+                               <AvatarImage src={selectedAuthor.avatar} />
+                               <AvatarFallback>{selectedAuthor.name[0]}</AvatarFallback>
                             </Avatar>
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                               <span className="font-medium text-foreground">Sarah Chen</span>
+                               <span className="font-medium text-foreground">{selectedAuthor.name}</span>
                                <span className="hidden sm:inline">•</span>
-                               <span>Published on Jan 12, 2024</span>
+                               <span>Published on {selectedPost?.publishedAt || "Jan 12, 2024"}</span>
                                <span className="hidden sm:inline">•</span>
                                <Badge variant="outline" className="font-normal text-xs rounded-full">
-                                  Release
+                                  {selectedPost?.tags?.[0] || "Release"}
                                </Badge>
                             </div>
                          </div>
