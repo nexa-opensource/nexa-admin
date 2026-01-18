@@ -1,4 +1,4 @@
-import { LucideIcon, FileText, BookOpen, Component, LayoutTemplate, CreditCard, Presentation, Paintbrush, Users, Home, Check, X, Clock, AlertCircle, Mail, Bell } from "lucide-react";
+import { LucideIcon, FileText, BookOpen, Component, LayoutTemplate, CreditCard, Presentation, Paintbrush, Users, Home, Check, X, Clock, AlertCircle, Mail, Bell, Twitter, MessageSquare } from "lucide-react";
 
 export interface BlogPost {
   id: string;
@@ -14,15 +14,6 @@ export interface BlogPost {
   tags: string[];
   coverImage: string;
   content?: string;
-}
-
-export interface DocItem {
-  id: string;
-  title: string;
-  slug: string;
-  category: "Getting Started" | "Examples" | "API Reference";
-  content?: string;
-  status: "published" | "draft";
 }
 
 export interface NewsletterSubscriber {
@@ -51,6 +42,14 @@ export interface User {
   status: "active" | "inactive";
   lastActive: string;
   avatar?: string;
+}
+
+export interface SocialMetric {
+  platform: "twitter" | "discord";
+  metric: string;
+  value: string;
+  change: string;
+  trend: "up" | "down" | "neutral";
 }
 
 export const USERS: User[] = [
@@ -101,14 +100,6 @@ export const BLOG_POSTS: BlogPost[] = [
   },
 ];
 
-export const DOCS_ITEMS: DocItem[] = [
-  { id: "1", title: "Introduction", slug: "introduction", category: "Getting Started", status: "published" },
-  { id: "2", title: "Installation", slug: "installation", category: "Getting Started", status: "published" },
-  { id: "3", title: "Theming", slug: "theming", category: "Getting Started", status: "published" },
-  { id: "4", title: "Components", slug: "components", category: "Examples", status: "published" },
-  { id: "5", title: "Hooks", slug: "hooks", category: "Examples", status: "draft" },
-];
-
 export const SUBSCRIBERS: NewsletterSubscriber[] = [
   { id: "1", email: "alice@example.com", status: "active", subscribedAt: "2024-01-15", source: "Blog Footer" },
   { id: "2", email: "bob.dev@gmail.com", status: "active", subscribedAt: "2024-01-16", source: "Popup" },
@@ -131,6 +122,13 @@ export const KPI_STATS = [
   { label: "Avg Open Rate", value: "42%", change: "+2.1%", icon: BookOpen },
 ];
 
+export const SOCIAL_STATS: SocialMetric[] = [
+  { platform: "twitter", metric: "Followers", value: "12.4k", change: "+124", trend: "up" },
+  { platform: "twitter", metric: "Engagement", value: "3.2%", change: "+0.4%", trend: "up" },
+  { platform: "discord", metric: "Members", value: "4,521", change: "+45", trend: "up" },
+  { platform: "discord", metric: "Active Now", value: "342", change: "-12", trend: "down" },
+];
+
 export const NAV_ITEMS = [
   {
     section: "Overview",
@@ -142,7 +140,6 @@ export const NAV_ITEMS = [
     section: "Content",
     items: [
       { title: "Blog", icon: FileText, href: "/content/blog" },
-      { title: "Documentation", icon: BookOpen, href: "/content/docs" },
     ]
   },
   {
