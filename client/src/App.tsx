@@ -11,6 +11,7 @@ import ComponentsPage from "@/pages/engineering/components";
 import ShowcasesPage from "@/pages/business/showcases";
 import ThemePage from "@/pages/settings/theme";
 import PricingPage from "@/pages/business/pricing";
+import NewsletterPage from "@/pages/marketing/newsletter";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/business/showcases" component={ShowcasesPage} />
       <Route path="/settings/theme" component={ThemePage} />
       <Route path="/business/pricing" component={PricingPage} />
+      <Route path="/marketing/newsletter" component={NewsletterPage} />
       
       {/* Fallbacks for routes not fully implemented yet but in sidebar */}
       <Route path="/engineering/registry" component={ComponentsPage} /> {/* Reuse Components page for now */}

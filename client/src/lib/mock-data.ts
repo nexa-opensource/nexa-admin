@@ -1,4 +1,4 @@
-import { LucideIcon, FileText, BookOpen, Component, LayoutTemplate, CreditCard, Presentation, Paintbrush, Users, Home, Check, X, Clock, AlertCircle } from "lucide-react";
+import { LucideIcon, FileText, BookOpen, Component, LayoutTemplate, CreditCard, Presentation, Paintbrush, Users, Home, Check, X, Clock, AlertCircle, Mail, Bell } from "lucide-react";
 
 export interface BlogPost {
   id: string;
@@ -56,6 +56,24 @@ export interface Plan {
   features: string[];
   popular?: boolean;
   cta: string;
+}
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  status: "active" | "unsubscribed" | "bounced";
+  subscribedAt: string;
+  source: string;
+}
+
+export interface EmailCampaign {
+  id: string;
+  subject: string;
+  status: "draft" | "scheduled" | "sent";
+  sentAt?: string;
+  recipients: number;
+  openRate?: number;
+  clickRate?: number;
 }
 
 export const BLOG_POSTS: BlogPost[] = [
@@ -184,6 +202,21 @@ export const PLANS: Plan[] = [
   }
 ];
 
+export const SUBSCRIBERS: NewsletterSubscriber[] = [
+  { id: "1", email: "alice@example.com", status: "active", subscribedAt: "2024-01-15", source: "Blog Footer" },
+  { id: "2", email: "bob.dev@gmail.com", status: "active", subscribedAt: "2024-01-16", source: "Popup" },
+  { id: "3", email: "charlie@company.co", status: "unsubscribed", subscribedAt: "2023-12-10", source: "Homepage" },
+  { id: "4", email: "david@startup.io", status: "active", subscribedAt: "2024-01-18", source: "Blog Footer" },
+  { id: "5", email: "eve@design.studio", status: "bounced", subscribedAt: "2024-01-12", source: "Popup" },
+];
+
+export const CAMPAIGNS: EmailCampaign[] = [
+  { id: "1", subject: "ShadcnUIKit V2 is here! 🚀", status: "sent", sentAt: "Jan 12, 2024", recipients: 2450, openRate: 42.5, clickRate: 12.3 },
+  { id: "2", subject: "Weekly Digest: Accessibility Tips", status: "sent", sentAt: "Jan 19, 2024", recipients: 2580, openRate: 38.1, clickRate: 8.7 },
+  { id: "3", subject: "New Component: Data Table", status: "scheduled", sentAt: "Jan 26, 2024", recipients: 2600 },
+  { id: "4", subject: "February Updates", status: "draft", recipients: 0 },
+];
+
 export const KPI_STATS = [
   { label: "Total Components", value: "142", change: "+12%", icon: Component },
   { label: "CLI Installs", value: "8,943", change: "+24%", icon: LayoutTemplate },
@@ -203,6 +236,12 @@ export const NAV_ITEMS = [
     items: [
       { title: "Blog", icon: FileText, href: "/content/blog" },
       { title: "Documentation", icon: BookOpen, href: "/content/docs" },
+    ]
+  },
+  {
+    section: "Marketing",
+    items: [
+      { title: "Newsletter", icon: Mail, href: "/marketing/newsletter" },
     ]
   },
   {
