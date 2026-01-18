@@ -8,10 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { ImageIcon, Check } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { BLOG_POSTS } from "@/lib/mock-data";
 import { BlogEditorHeader } from "@/components/blog/BlogEditorHeader";
 import { BlogSettingsSheet } from "@/components/blog/BlogSettingsSheet";
+import DOMPurify from "dompurify";
 
 // Mock data constants
 const AUTHORS = [
@@ -41,7 +42,7 @@ const AUTHORS = [
   },
 ];
 
-const COMMENTS = [
+const INITIAL_COMMENTS = [
   {
     id: "1",
     author: "Dev User",
@@ -72,6 +73,7 @@ const COMMENTS = [
 export default function BlogDetailPage() {
   const { toast } = useToast();
   const [, params] = useRoute("/content/blog/:id");
+  const [, setLocation] = useLocation();
   const id = params?.id;
   const isNew = id === "new";
 
@@ -87,6 +89,8 @@ export default function BlogDetailPage() {
   const [coverImage, setCoverImage] = useState(
     "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000",
   );
+  const [tags, setTags] = useState<string[]>([]);
+  const [comments, setComments] = useState(INITIAL_COMMENTS);
 
   // UI State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -103,7 +107,7 @@ export default function BlogDetailPage() {
         setExcerpt(post.excerpt);
         setStatus(post.status);
         setCoverImage(post.coverImage);
-        // NOTE: Mock data doesn't have content body, so we simulate it or leave empty
+        setTags(post.tags || []);
         setContent(
           post.content ||
             "<p>This is simulated content loaded from the backend...</p>",
@@ -111,9 +115,17 @@ export default function BlogDetailPage() {
         const author =
           AUTHORS.find((a) => a.name === post.author) || AUTHORS[0];
         setSelectedAuthor(author);
+      } else {
+        // Handle invalid ID
+        toast({
+          title: "Error",
+          description: "Post not found",
+          variant: "destructive",
+        });
+        setLocation("/content/blog");
       }
     }
-  }, [id, isNew]);
+  }, [id, isNew, setLocation, toast]);
 
   // Auto-save simulation
   useEffect(() => {
@@ -168,9 +180,41 @@ export default function BlogDetailPage() {
         title: "Deleted",
         description: "Post has been removed permanently",
       });
-      // In real app, navigate back
-      window.history.back();
+      setLocation("/content/blog");
     }
+  };
+
+  const handleAddComment = (
+    content: string,
+    author: { name: string; avatar: string },
+  ) => {
+    const newComment = {
+      id: crypto.randomUUID(),
+      author: author.name,
+      avatar: author.avatar,
+      content,
+      date: "Just now",
+      likes: 0,
+    };
+    setComments([newComment, ...comments]);
+    toast({
+      title: "Comment added",
+      description: "Your comment has been successfully posted.",
+    });
+  };
+
+  const handleDeleteComment = (id: string) => {
+    setComments(comments.filter((c) => c.id !== id));
+    toast({
+      title: "Comment deleted",
+      description: "The comment has been removed.",
+    });
+  };
+
+  const handleLikeComment = (id: string) => {
+    setComments(
+      comments.map((c) => (c.id === id ? { ...c, likes: c.likes + 1 } : c)),
+    );
   };
 
   return (
@@ -201,11 +245,16 @@ export default function BlogDetailPage() {
           setExcerpt={setExcerpt}
           coverImage={coverImage}
           setCoverImage={setCoverImage}
+          tags={tags}
+          setTags={setTags}
           author={selectedAuthor}
           setAuthor={setSelectedAuthor}
           allAuthors={AUTHORS}
-          comments={COMMENTS}
+          comments={comments}
           onDelete={handleDelete}
+          onAddComment={handleAddComment}
+          onDeleteComment={handleDeleteComment}
+          onLikeComment={handleLikeComment}
         />
 
         <ScrollArea className="flex-1 bg-background" id="scroll-container">
@@ -308,7 +357,9 @@ export default function BlogDetailPage() {
                 {isPreview ? (
                   <div
                     className="prose prose-lg dark:prose-invert max-w-none p-4"
-                    dangerouslySetInnerHTML={{ __html: content }}
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(content),
+                    }}
                   />
                 ) : (
                   <RichTextEditor

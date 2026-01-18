@@ -107,7 +107,7 @@ export default function BlogPage() {
               <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                 Blog Posts{" "}
                 <Badge variant="secondary" className="text-xs font-normal">
-                  {posts.length}
+                  {filteredPosts.length}
                 </Badge>
               </h1>
               <p className="text-muted-foreground">
@@ -116,7 +116,7 @@ export default function BlogPage() {
             </div>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                variant="secondary"
                 className="hidden sm:flex"
                 onClick={() =>
                   toast({
@@ -227,12 +227,20 @@ export default function BlogPage() {
                 >
                   <Card
                     className={cn(
-                      "group cursor-pointer border-border/60 hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5 flex overflow-hidden bg-card/50 backdrop-blur-sm",
+                      "group cursor-pointer border-border/60 hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5 flex overflow-hidden bg-card/50 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                       layoutMode === "grid"
                         ? "flex-col h-full"
                         : "flex-row h-48",
                     )}
                     onClick={() => handleEdit(post.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleEdit(post.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
                   >
                     <div
                       className={cn(
@@ -389,12 +397,25 @@ export default function BlogPage() {
                                 <FileText className="mr-2 h-4 w-4" /> Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toast({
+                                    title: "Analytics",
+                                    description:
+                                      "Analytics feature coming soon",
+                                  });
+                                }}
                               >
                                 <BarChart2 className="mr-2 h-4 w-4" /> Analytics
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toast({
+                                    title: "Share",
+                                    description: "Share feature coming soon",
+                                  });
+                                }}
                               >
                                 <Share2 className="mr-2 h-4 w-4" /> Share
                               </DropdownMenuItem>

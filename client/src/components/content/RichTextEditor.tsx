@@ -9,7 +9,9 @@ import TextAlign from "@tiptap/extension-text-align";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import AutoJoiner from "tiptap-extension-auto-joiner";
 import { Color } from "@tiptap/extension-color";
-import { TextStyle, LineHeight, FontSize } from "@tiptap/extension-text-style";
+import { TextStyle } from "@tiptap/extension-text-style";
+import FontSize from "@tiptap/extension-font-size";
+import LineHeight from "tiptap-extension-line-height";
 import { Toggle } from "@/components/ui/toggle";
 import {
   Bold,
@@ -94,6 +96,7 @@ export function RichTextEditor({
       FontSize,
       LineHeight.configure({
         types: ["heading", "paragraph"],
+        defaultHeight: "1.5",
       }),
     ],
     content: value,
@@ -127,7 +130,13 @@ export function RichTextEditor({
     if (!editor) return;
     const url = window.prompt("Image URL");
     if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
+      // Basic validation for URL
+      try {
+        new URL(url);
+        editor.chain().focus().setImage({ src: url }).run();
+      } catch (e) {
+        alert("Invalid URL");
+      }
     }
   }, [editor]);
 
@@ -230,7 +239,11 @@ export function RichTextEditor({
         <div className="flex items-center gap-1.5 px-1">
           <div className="relative flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted transition-colors border border-transparent hover:border-input">
             <Palette className="h-4 w-4 absolute pointer-events-none text-foreground" />
+            <label htmlFor="color-picker" className="sr-only">
+              Text Color
+            </label>
             <input
+              id="color-picker"
               type="color"
               value={editor.getAttributes("textStyle").color || "#000000"}
               onInput={(e) =>

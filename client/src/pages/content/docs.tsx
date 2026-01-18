@@ -105,7 +105,7 @@ export default function DocsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline">Preview</Button>
+                  <Button variant="secondary">Preview</Button>
                   <Button>Save Changes</Button>
                 </div>
               </div>

@@ -122,7 +122,7 @@ export function BlogEditorHeader({
         <Button
           variant="ghost"
           size="icon"
-          title={isPreview ? "Unknown" : "Preview"}
+          title={isPreview ? "Exit Preview" : "Preview"}
           onClick={onPreviewToggle}
           className={isPreview ? "bg-muted text-foreground" : ""}
         >
@@ -134,10 +134,9 @@ export function BlogEditorHeader({
         </Button>
         <div className="h-4 w-px bg-border" />
         <Button
-          variant="outline"
+          variant="secondary"
           className="gap-2"
           onClick={() => onSave("draft")}
-          disabled={status === "published" && !isNew} // Example logic: if published, maybe "Save Draft" isn't the primary action
         >
           <Save className="h-4 w-4" /> Save Draft
         </Button>
