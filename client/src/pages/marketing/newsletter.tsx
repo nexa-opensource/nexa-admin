@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { SUBSCRIBERS, CAMPAIGNS } from "@/lib/mock-data";
-import { Mail, Plus, Search, Filter, Users, Send, FileEdit, MoreHorizontal, TrendingUp, UserPlus, MousePointerClick, Eye, ArrowLeft, Calendar, Clock } from "lucide-react";
+import { SUBSCRIBERS, CAMPAIGNS, EmailCampaign, NewsletterSubscriber } from "@/lib/mock-data";
+import { Mail, Plus, Search, Filter, Users, Send, FileEdit, MoreHorizontal, TrendingUp, UserPlus, MousePointerClick, Eye, ArrowLeft, Calendar, Clock, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
@@ -13,9 +13,90 @@ import { RichTextEditor } from "@/components/content/RichTextEditor";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function NewsletterPage() {
+  const { toast } = useToast();
   const [view, setView] = useState<"list" | "create">("list");
+  
+  // State for Campaigns
+  const [campaigns, setCampaigns] = useState<EmailCampaign[]>(CAMPAIGNS);
+  const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
+  
+  // State for Editor
+  const [subject, setSubject] = useState("");
+  const [preheader, setPreheader] = useState("");
+  const [status, setStatus] = useState<"draft" | "scheduled" | "sent">("draft");
+
+  // State for Subscribers
+  const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>(SUBSCRIBERS);
+  const [subscriberSearch, setSubscriberSearch] = useState("");
+  const [isAddSubscriberOpen, setIsAddSubscriberOpen] = useState(false);
+
+  const handleEditCampaign = (campaign?: EmailCampaign) => {
+    if (campaign) {
+      setSelectedCampaign(campaign);
+      setSubject(campaign.subject);
+      setPreheader(""); // Mock data doesn't have preheader
+      setStatus(campaign.status);
+    } else {
+      setSelectedCampaign(null);
+      setSubject("");
+      setPreheader("");
+      setStatus("draft");
+    }
+    setView("create");
+  };
+
+  const handleSaveCampaign = (newStatus: "draft" | "scheduled" | "sent") => {
+    if (!subject) {
+      toast({ title: "Error", description: "Subject line is required", variant: "destructive" });
+      return;
+    }
+
+    const newCampaign: EmailCampaign = {
+      id: selectedCampaign?.id || Math.random().toString(36).substr(2, 9),
+      subject,
+      status: newStatus,
+      sentAt: newStatus === 'sent' ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : undefined,
+      recipients: selectedCampaign?.recipients || 2643,
+      openRate: selectedCampaign?.openRate,
+      clickRate: selectedCampaign?.clickRate,
+    };
+
+    if (selectedCampaign) {
+      setCampaigns(campaigns.map(c => c.id === selectedCampaign.id ? newCampaign : c));
+      toast({ title: "Success", description: "Campaign updated successfully" });
+    } else {
+      setCampaigns([newCampaign, ...campaigns]);
+      toast({ title: "Success", description: "New campaign created successfully" });
+    }
+    setView("list");
+  };
+
+  const handleDeleteCampaign = (id: string) => {
+    setCampaigns(campaigns.filter(c => c.id !== id));
+    toast({ title: "Deleted", description: "Campaign has been removed" });
+  };
+
+  const handleAddSubscriber = (email: string) => {
+    const newSubscriber: NewsletterSubscriber = {
+      id: Math.random().toString(36).substr(2, 9),
+      email,
+      status: "active",
+      subscribedAt: new Date().toISOString().split('T')[0],
+      source: "Manual Add"
+    };
+    setSubscribers([newSubscriber, ...subscribers]);
+    setIsAddSubscriberOpen(false);
+    toast({ title: "Success", description: "Subscriber added successfully" });
+  };
+
+  const handleDeleteSubscriber = (id: string) => {
+    setSubscribers(subscribers.filter(s => s.id !== id));
+    toast({ title: "Deleted", description: "Subscriber removed" });
+  };
 
   return (
     <AdminLayout>
@@ -26,7 +107,7 @@ export default function NewsletterPage() {
               <h1 className="text-3xl font-bold tracking-tight">Newsletter & Alerts</h1>
               <p className="text-muted-foreground text-lg">Manage subscribers and email campaigns.</p>
             </div>
-            <Button onClick={() => setView("create")}>
+            <Button onClick={() => handleEditCampaign()}>
               <Plus className="mr-2 h-4 w-4" /> New Campaign
             </Button>
           </div>
@@ -38,7 +119,7 @@ export default function NewsletterPage() {
                    <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                   <div className="text-2xl font-bold">2,643</div>
+                   <div className="text-2xl font-bold">{subscribers.length.toLocaleString()}</div>
                    <p className="text-xs text-emerald-500 flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" /> +12% from last month
                    </p>
@@ -84,8 +165,17 @@ export default function NewsletterPage() {
              
              <TabsContent value="campaigns" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                   {CAMPAIGNS.map(campaign => (
-                      <Card key={campaign.id} className="group cursor-pointer hover:border-primary/50 transition-colors">
+                   {campaigns.map(campaign => (
+                      <Card 
+                        key={campaign.id} 
+                        className="group cursor-pointer hover:border-primary/50 transition-colors relative"
+                        onClick={() => handleEditCampaign(campaign)}
+                      >
+                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleDeleteCampaign(campaign.id); }}>
+                               <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                         </div>
                          <CardHeader>
                             <div className="flex items-center justify-between mb-2">
                                <Badge variant={campaign.status === 'sent' ? 'default' : campaign.status === 'scheduled' ? 'secondary' : 'outline'}>
@@ -119,7 +209,7 @@ export default function NewsletterPage() {
                       </Card>
                    ))}
                    
-                   <Card className="border-dashed flex items-center justify-center min-h-[200px] hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => setView("create")}>
+                   <Card className="border-dashed flex items-center justify-center min-h-[200px] hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => handleEditCampaign()}>
                       <div className="flex flex-col items-center gap-2 text-muted-foreground">
                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                             <Plus className="h-5 w-5" />
@@ -134,11 +224,42 @@ export default function NewsletterPage() {
                 <div className="flex items-center gap-4">
                    <div className="relative flex-1 max-w-sm">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Search email..." className="pl-9" />
+                      <Input 
+                        placeholder="Search email..." 
+                        className="pl-9" 
+                        value={subscriberSearch}
+                        onChange={(e) => setSubscriberSearch(e.target.value)}
+                      />
                    </div>
-                   <Button variant="outline">
-                      <Filter className="mr-2 h-4 w-4" /> Filter
-                   </Button>
+                   <Dialog open={isAddSubscriberOpen} onOpenChange={setIsAddSubscriberOpen}>
+                      <DialogTrigger asChild>
+                         <Button>
+                            <Plus className="mr-2 h-4 w-4" /> Add Subscriber
+                         </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                         <DialogHeader>
+                            <DialogTitle>Add Subscriber</DialogTitle>
+                            <DialogDescription>Manually add a user to the newsletter list.</DialogDescription>
+                         </DialogHeader>
+                         <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.currentTarget);
+                            const email = formData.get("email") as string;
+                            if (email) handleAddSubscriber(email);
+                         }}>
+                            <div className="grid gap-4 py-4">
+                               <div className="grid gap-2">
+                                  <Label htmlFor="email">Email</Label>
+                                  <Input id="email" name="email" type="email" placeholder="user@example.com" required />
+                               </div>
+                            </div>
+                            <DialogFooter>
+                               <Button type="submit">Add Subscriber</Button>
+                            </DialogFooter>
+                         </form>
+                      </DialogContent>
+                   </Dialog>
                    <Button variant="outline">
                       Export CSV
                    </Button>
@@ -156,7 +277,7 @@ export default function NewsletterPage() {
                          </TableRow>
                       </TableHeader>
                       <TableBody>
-                         {SUBSCRIBERS.map((sub) => (
+                         {subscribers.filter(s => s.email.includes(subscriberSearch)).map((sub) => (
                             <TableRow key={sub.id}>
                                <TableCell className="font-medium">{sub.email}</TableCell>
                                <TableCell>
@@ -174,8 +295,9 @@ export default function NewsletterPage() {
                                         </Button>
                                      </DropdownMenuTrigger>
                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                                        <DropdownMenuItem className="text-destructive">Remove</DropdownMenuItem>
+                                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteSubscriber(sub.id)}>
+                                           Remove
+                                        </DropdownMenuItem>
                                      </DropdownMenuContent>
                                   </DropdownMenu>
                                </TableCell>
@@ -194,11 +316,11 @@ export default function NewsletterPage() {
                 <Button variant="ghost" size="sm" onClick={() => setView("list")} className="-ml-2 text-muted-foreground hover:text-foreground">
                    <ArrowLeft className="h-4 w-4 mr-2" /> Back to Campaigns
                 </Button>
-                <h1 className="text-2xl font-bold tracking-tight">New Campaign</h1>
+                <h1 className="text-2xl font-bold tracking-tight">{selectedCampaign ? 'Edit Campaign' : 'New Campaign'}</h1>
              </div>
              <div className="flex items-center gap-2">
-                <Button variant="outline">Save Draft</Button>
-                <Button>
+                <Button variant="outline" onClick={() => handleSaveCampaign('draft')}>Save Draft</Button>
+                <Button onClick={() => handleSaveCampaign('sent')}>
                    <Send className="mr-2 h-4 w-4" /> Send Campaign
                 </Button>
              </div>
@@ -214,11 +336,19 @@ export default function NewsletterPage() {
                    <CardContent className="space-y-4">
                       <div className="space-y-2">
                          <Label>Subject Line</Label>
-                         <Input placeholder="Enter a catchy subject..." />
+                         <Input 
+                           placeholder="Enter a catchy subject..." 
+                           value={subject}
+                           onChange={(e) => setSubject(e.target.value)}
+                         />
                       </div>
                       <div className="space-y-2">
                          <Label>Preheader Text</Label>
-                         <Input placeholder="Preview text shown in inbox..." />
+                         <Input 
+                           placeholder="Preview text shown in inbox..." 
+                           value={preheader}
+                           onChange={(e) => setPreheader(e.target.value)}
+                         />
                          <p className="text-xs text-muted-foreground">Optional but recommended.</p>
                       </div>
                       <div className="space-y-2">

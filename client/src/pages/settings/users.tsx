@@ -1,10 +1,9 @@
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { USERS } from "@/lib/mock-data";
-import { Search, Plus, MoreHorizontal, Mail, Shield, User, Filter, Trash2, Edit } from "lucide-react";
+import { USERS, User } from "@/lib/mock-data";
+import { Search, Plus, MoreHorizontal, Mail, Shield, User as UserIcon, Filter, Trash2, Edit, Save } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,11 +11,22 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 export default function UsersPage() {
-  const [users, setUsers] = useState(USERS);
+  const { toast } = useToast();
+  const [users, setUsers] = useState<User[]>(USERS);
   const [search, setSearch] = useState("");
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  // Form State
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    role: "editor",
+    status: "active"
+  });
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -25,6 +35,62 @@ export default function UsersPage() {
 
   const handleDelete = (id: string) => {
     setUsers(users.filter(u => u.id !== id));
+    toast({ title: "User Deleted", description: "User has been removed from the team." });
+  };
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleCreate = () => {
+    setEditingUser(null);
+    setFormData({
+      name: "",
+      email: "",
+      role: "editor",
+      status: "active"
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!formData.name || !formData.email) {
+      toast({ title: "Error", description: "Name and Email are required", variant: "destructive" });
+      return;
+    }
+
+    if (editingUser) {
+      // Update existing
+      setUsers(users.map(u => u.id === editingUser.id ? {
+        ...u,
+        name: formData.name,
+        email: formData.email,
+        role: formData.role as "admin" | "editor" | "viewer",
+        status: formData.status as "active" | "inactive"
+      } : u));
+      toast({ title: "Success", description: "User details updated" });
+    } else {
+      // Create new
+      const newUser: User = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: formData.name,
+        email: formData.email,
+        role: formData.role as "admin" | "editor" | "viewer",
+        status: formData.status as "active" | "inactive",
+        lastActive: "Just now",
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.name}`
+      };
+      setUsers([...users, newUser]);
+      toast({ title: "Success", description: "New user added to team" });
+    }
+    setIsDialogOpen(false);
   };
 
   return (
@@ -35,32 +101,46 @@ export default function UsersPage() {
             <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
             <p className="text-muted-foreground text-lg">Manage team members and their permissions.</p>
           </div>
-          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={handleCreate}>
                 <Plus className="mr-2 h-4 w-4" /> Add User
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
+                <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
                 <DialogDescription>
-                  Create a new account for a team member.
+                  {editingUser ? 'Update user details and permissions.' : 'Create a new account for a team member.'}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="John Doe" />
+                  <Input 
+                    id="name" 
+                    value={formData.name} 
+                    onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                    placeholder="John Doe" 
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="john@example.com" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={formData.email} 
+                    onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                    placeholder="john@example.com" 
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="role">Role</Label>
-                    <Select defaultValue="editor">
+                    <Select 
+                      value={formData.role} 
+                      onValueChange={(val) => setFormData({...formData, role: val})}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
@@ -73,7 +153,10 @@ export default function UsersPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="status">Status</Label>
-                    <Select defaultValue="active">
+                    <Select 
+                      value={formData.status} 
+                      onValueChange={(val) => setFormData({...formData, status: val})}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
@@ -86,8 +169,8 @@ export default function UsersPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-                <Button onClick={() => setIsAddOpen(false)}>Create Account</Button>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handleSave}>{editingUser ? 'Save Changes' : 'Create Account'}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -155,7 +238,7 @@ export default function UsersPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(user)}>
                           <Edit className="mr-2 h-4 w-4" /> Edit Details
                         </DropdownMenuItem>
                         <DropdownMenuItem>

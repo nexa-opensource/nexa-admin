@@ -3,23 +3,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BLOG_POSTS, BlogPost } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, MoreHorizontal, Calendar, Clock, ArrowRight, ArrowLeft, Save, Eye, Settings, Globe, Image as ImageIcon, Tag, Hash, Share2, UploadCloud, Heart, MessageSquare, BarChart2, TrendingUp, User, ThumbsUp, Send } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Eye, Settings, Globe, Image as ImageIcon, MessageSquare, BarChart2, TrendingUp, Heart, Save, ArrowLeft, UploadCloud, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
-import { RichTextEditor } from "@/components/content/RichTextEditor";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check } from "lucide-react";
+import { Check, ThumbsUp } from "lucide-react";
+import { RichTextEditor } from "@/components/content/RichTextEditor";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock users for author selection
 const AUTHORS = [
@@ -29,7 +29,6 @@ const AUTHORS = [
   { id: "4", name: "Emily Writer", role: "Content Strategist", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emily" },
 ];
 
-// Mock comments
 const COMMENTS = [
   { id: "1", author: "Dev User", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dev", content: "Great article! The new features look amazing.", date: "2 hours ago", likes: 12 },
   { id: "2", author: "Frontend Fan", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Fan", content: "Can't wait to try the new components. Is there a migration guide?", date: "5 hours ago", likes: 8 },
@@ -37,19 +36,72 @@ const COMMENTS = [
 ];
 
 export default function BlogPage() {
+  const { toast } = useToast();
+  const [posts, setPosts] = useState<BlogPost[]>(BLOG_POSTS);
   const [view, setView] = useState<"list" | "edit">("list");
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  
+  // Editor State
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [status, setStatus] = useState<"published" | "draft" | "review">("draft");
   const [selectedAuthor, setSelectedAuthor] = useState(AUTHORS[0]);
   const [openAuthorSelect, setOpenAuthorSelect] = useState(false);
 
   const handleEdit = (post?: BlogPost) => {
-    setSelectedPost(post || null);
     if (post) {
-      // In a real app, you'd match the author ID
+      setSelectedPost(post);
+      setTitle(post.title);
+      setSlug(post.slug);
+      setExcerpt(post.excerpt);
+      setStatus(post.status);
       const author = AUTHORS.find(a => a.name === post.author) || AUTHORS[0];
       setSelectedAuthor(author);
+    } else {
+      setSelectedPost(null);
+      setTitle("");
+      setSlug("");
+      setExcerpt("");
+      setStatus("draft");
+      setSelectedAuthor(AUTHORS[0]);
     }
     setView("edit");
+  };
+
+  const handleSave = () => {
+    if (!title) {
+      toast({ title: "Error", description: "Title is required", variant: "destructive" });
+      return;
+    }
+
+    const newPost: BlogPost = {
+      id: selectedPost?.id || Math.random().toString(36).substr(2, 9),
+      title,
+      slug: slug || title.toLowerCase().replace(/\s+/g, '-'),
+      excerpt: excerpt || "No description provided.",
+      author: selectedAuthor.name,
+      publishedAt: selectedPost?.publishedAt || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      readTime: "5 min read",
+      status,
+      views: selectedPost?.views || 0,
+      tags: selectedPost?.tags || ["General"],
+      coverImage: selectedPost?.coverImage || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000",
+    };
+
+    if (selectedPost) {
+      setPosts(posts.map(p => p.id === selectedPost.id ? newPost : p));
+      toast({ title: "Success", description: "Post updated successfully" });
+    } else {
+      setPosts([newPost, ...posts]);
+      toast({ title: "Success", description: "New post created successfully" });
+    }
+    setView("list");
+  };
+
+  const handleDelete = (id: string) => {
+    setPosts(posts.filter(p => p.id !== id));
+    toast({ title: "Deleted", description: "Post has been removed" });
   };
 
   return (
@@ -92,7 +144,7 @@ export default function BlogPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 pb-8">
-            {BLOG_POSTS.map((post) => (
+            {posts.map((post) => (
               <Card 
                 key={post.id} 
                 className="group cursor-pointer border-border/60 hover:border-primary/50 transition-all hover:shadow-md flex flex-col overflow-hidden"
@@ -158,10 +210,10 @@ export default function BlogPage() {
                           </Button>
                        </DropdownMenuTrigger>
                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(post)}>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>View Analytics</DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(post); }}>Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => e.stopPropagation()}>View Analytics</DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(post.id); }}>Delete</DropdownMenuItem>
                        </DropdownMenuContent>
                     </DropdownMenu>
                  </CardFooter>
@@ -250,7 +302,11 @@ export default function BlogPage() {
                                      <Label>URL Slug</Label>
                                      <div className="flex">
                                         <span className="flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm">/blog/</span>
-                                        <Input defaultValue="introducing-shadcn-ui-kit-v2" className="rounded-l-none font-mono text-sm" />
+                                        <Input 
+                                          value={slug} 
+                                          onChange={(e) => setSlug(e.target.value)} 
+                                          className="rounded-l-none font-mono text-sm" 
+                                        />
                                      </div>
                                   </div>
                                   <div className="grid gap-2">
@@ -315,9 +371,10 @@ export default function BlogPage() {
                                      <Textarea 
                                         className="resize-none h-24" 
                                         placeholder="Brief summary shown on blog cards..." 
-                                        defaultValue={selectedPost?.excerpt || "We've rebuilt the entire library from the ground up. Better performance, more accessibility, and a brand new design system."} 
+                                        value={excerpt}
+                                        onChange={(e) => setExcerpt(e.target.value)}
                                      />
-                                     <p className="text-xs text-muted-foreground text-right">0/160 characters</p>
+                                     <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160 characters</p>
                                   </div>
                                </div>
                             </div>
@@ -370,6 +427,17 @@ export default function BlogPage() {
                                   </div>
                                </div>
                             </div>
+                            
+                            <div className="pt-4 flex justify-between">
+                               <Button variant="destructive" onClick={() => {
+                                  if (selectedPost) {
+                                    handleDelete(selectedPost.id);
+                                    setView("list");
+                                  }
+                               }}>
+                                  <Trash2 className="mr-2 h-4 w-4" /> Delete Post
+                               </Button>
+                            </div>
 
                          </div>
                       </ScrollArea>
@@ -379,10 +447,16 @@ export default function BlogPage() {
                    <Eye className="h-4 w-4" />
                 </Button>
                 <div className="h-4 w-px bg-border" />
-                <Button variant="outline" className="gap-2">
-                   <Save className="h-4 w-4" /> Save
+                <Button variant="outline" className="gap-2" onClick={() => {
+                   setStatus("draft");
+                   handleSave();
+                }}>
+                   <Save className="h-4 w-4" /> Save Draft
                 </Button>
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={() => {
+                   setStatus("published");
+                   handleSave();
+                }}>
                    Publish
                 </Button>
              </div>
@@ -400,42 +474,34 @@ export default function BlogPage() {
                                src={selectedPost?.coverImage || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000"} 
                                className="w-full h-full object-cover transition-opacity hover:opacity-90"
                             />
+                            <Button variant="secondary" size="sm" className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                               Change Cover
+                            </Button>
                          </div>
-                         <Button variant="secondary" size="sm" className="absolute bottom-4 right-4 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ImageIcon className="mr-2 h-4 w-4" /> Change Cover
-                         </Button>
                       </div>
-
-                      <div className="space-y-6 pt-4">
-                         <Textarea 
-                            placeholder="Post Title" 
-                            className="text-4xl md:text-5xl font-extrabold border-none px-0 shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/30 min-h-[60px] resize-none overflow-hidden bg-transparent leading-tight tracking-tight" 
-                            defaultValue={selectedPost?.title || "Introducing ShadcnUIKit V2"}
-                         />
-                         
-                         <div className="flex items-center gap-3 text-sm text-muted-foreground border-b pb-8">
-                            <Avatar className="h-8 w-8 ring-2 ring-background">
+                      
+                      <Input 
+                        className="text-4xl font-extrabold border-none px-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground/50 bg-transparent" 
+                        placeholder="Post Title" 
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                      />
+                      
+                      <div className="flex items-center gap-4 text-muted-foreground pb-4 border-b">
+                         <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
                                <AvatarImage src={selectedAuthor.avatar} />
                                <AvatarFallback>{selectedAuthor.name[0]}</AvatarFallback>
                             </Avatar>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                               <span className="font-medium text-foreground">{selectedAuthor.name}</span>
-                               <span className="hidden sm:inline">•</span>
-                               <span>Published on {selectedPost?.publishedAt || "Jan 12, 2024"}</span>
-                               <span className="hidden sm:inline">•</span>
-                               <Badge variant="outline" className="font-normal text-xs rounded-full">
-                                  {selectedPost?.tags?.[0] || "Release"}
-                               </Badge>
-                            </div>
+                            <span className="text-sm font-medium text-foreground">{selectedAuthor.name}</span>
                          </div>
+                         <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                         <span className="text-sm">{new Date().toLocaleDateString()}</span>
                       </div>
                    </div>
 
-                   <div className="min-h-[500px]">
-                      <RichTextEditor className="border-none shadow-none bg-transparent" minHeight="min-h-[60vh]" />
-                   </div>
+                   <RichTextEditor minHeight="min-h-[500px]" className="border-none bg-transparent" />
                 </div>
-
              </div>
           </ScrollArea>
         </div>
