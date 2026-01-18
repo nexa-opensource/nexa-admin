@@ -3,509 +3,448 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BLOG_POSTS, BlogPost } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, MoreHorizontal, Eye, Settings, Globe, Image as ImageIcon, MessageSquare, BarChart2, TrendingUp, Heart, Save, ArrowLeft, UploadCloud, Trash2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Eye,
+  BarChart2,
+  Trash2,
+  LayoutGrid,
+  List as ListIcon,
+  Calendar,
+  Clock,
+  ChevronRight,
+  Share2,
+  FileText,
+  UploadCloud,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useState, useMemo } from "react";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check, ThumbsUp } from "lucide-react";
-import { RichTextEditor } from "@/components/content/RichTextEditor";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock users for author selection
-const AUTHORS = [
-  { id: "1", name: "Sarah Chen", role: "Lead Engineer", avatar: "https://github.com/shadcn.png" },
-  { id: "2", name: "Marcus Johnson", role: "Product Designer", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus" },
-  { id: "3", name: "Alex Tech", role: "Developer Advocate", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" },
-  { id: "4", name: "Emily Writer", role: "Content Strategist", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emily" },
-];
-
-const COMMENTS = [
-  { id: "1", author: "Dev User", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dev", content: "Great article! The new features look amazing.", date: "2 hours ago", likes: 12 },
-  { id: "2", author: "Frontend Fan", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Fan", content: "Can't wait to try the new components. Is there a migration guide?", date: "5 hours ago", likes: 8 },
-  { id: "3", author: "React Lover", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=React", content: "This is exactly what we needed. Thanks for the hard work!", date: "1 day ago", likes: 24 },
-];
+import { motion, AnimatePresence, Variants } from "framer-motion";
+import { useLocation } from "wouter";
 
 export default function BlogPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [posts, setPosts] = useState<BlogPost[]>(BLOG_POSTS);
-  const [view, setView] = useState<"list" | "edit">("list");
-  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
-  
-  // Editor State
-  const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
-  const [excerpt, setExcerpt] = useState("");
-  const [status, setStatus] = useState<"published" | "draft" | "review">("draft");
-  const [selectedAuthor, setSelectedAuthor] = useState(AUTHORS[0]);
-  const [openAuthorSelect, setOpenAuthorSelect] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const handleEdit = (post?: BlogPost) => {
-    if (post) {
-      setSelectedPost(post);
-      setTitle(post.title);
-      setSlug(post.slug);
-      setExcerpt(post.excerpt);
-      setStatus(post.status);
-      const author = AUTHORS.find(a => a.name === post.author) || AUTHORS[0];
-      setSelectedAuthor(author);
-    } else {
-      setSelectedPost(null);
-      setTitle("");
-      setSlug("");
-      setExcerpt("");
-      setStatus("draft");
-      setSelectedAuthor(AUTHORS[0]);
-    }
-    setView("edit");
-  };
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      const matchesSearch =
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.author.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus =
+        statusFilter === "all" || post.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [posts, searchQuery, statusFilter]);
 
-  const handleSave = () => {
-    if (!title) {
-      toast({ title: "Error", description: "Title is required", variant: "destructive" });
-      return;
-    }
-
-    const newPost: BlogPost = {
-      id: selectedPost?.id || Math.random().toString(36).substr(2, 9),
-      title,
-      slug: slug || title.toLowerCase().replace(/\s+/g, '-'),
-      excerpt: excerpt || "No description provided.",
-      author: selectedAuthor.name,
-      publishedAt: selectedPost?.publishedAt || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      readTime: "5 min read",
-      status,
-      views: selectedPost?.views || 0,
-      tags: selectedPost?.tags || ["General"],
-      coverImage: selectedPost?.coverImage || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000",
-    };
-
-    if (selectedPost) {
-      setPosts(posts.map(p => p.id === selectedPost.id ? newPost : p));
-      toast({ title: "Success", description: "Post updated successfully" });
-    } else {
-      setPosts([newPost, ...posts]);
-      toast({ title: "Success", description: "New post created successfully" });
-    }
-    setView("list");
+  const handleEdit = (id?: string) => {
+    setLocation(id ? `/content/blog/${id}` : "/content/blog/new");
   };
 
   const handleDelete = (id: string) => {
-    setPosts(posts.filter(p => p.id !== id));
-    toast({ title: "Deleted", description: "Post has been removed" });
+    setPosts(posts.filter((p) => p.id !== id));
+    toast({
+      title: "Deleted",
+      description: "Post has been removed permanently",
+    });
+  };
+
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05,
+      },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { y: 20, opacity: 0 },
+    show: {
+      y: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 300, damping: 24 },
+    },
   };
 
   return (
     <AdminLayout>
-      {view === "list" ? (
-        <div className="space-y-8 h-full flex flex-col">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="list-view"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          className="space-y-6 h-full flex flex-col"
+        >
+          {/* Header Section */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-background/50 backdrop-blur-sm p-1 rounded-xl">
             <div className="space-y-1">
-              <h1 className="text-3xl font-bold tracking-tight">Blog Posts</h1>
-              <p className="text-muted-foreground">Manage your articles, tutorials, and announcements.</p>
+              <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                Blog Posts{" "}
+                <Badge variant="secondary" className="text-xs font-normal">
+                  {posts.length}
+                </Badge>
+              </h1>
+              <p className="text-muted-foreground">
+                Manage your articles, tutorials, and announcements.
+              </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline">
+              <Button
+                variant="outline"
+                className="hidden sm:flex"
+                onClick={() =>
+                  toast({
+                    title: "Coming Soon",
+                    description: "Import feature is under development.",
+                  })
+                }
+              >
                 <UploadCloud className="mr-2 h-4 w-4" /> Import
               </Button>
-              <Button onClick={() => handleEdit()}>
+              <Button
+                onClick={() => handleEdit()}
+                className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+              >
                 <Plus className="mr-2 h-4 w-4" /> New Post
               </Button>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 border-b pb-4">
-            <div className="relative flex-1 w-full max-w-sm">
+          {/* Filters Toolbar */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-2 rounded-lg border shadow-sm sticky top-0 z-10">
+            <div className="relative flex-1 w-full sm:max-w-xs transition-all focus-within:max-w-sm focus-within:ring-2 ring-primary/20 rounded-md">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search articles..." className="pl-9 bg-background" />
+              <Input
+                placeholder="Search articles..."
+                className="pl-9 bg-background border-none shadow-none focus-visible:ring-0"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
-               <Tabs defaultValue="all" className="w-full">
-                  <TabsList>
-                    <TabsTrigger value="all">All Posts</TabsTrigger>
-                    <TabsTrigger value="published">Published</TabsTrigger>
-                    <TabsTrigger value="drafts">Drafts</TabsTrigger>
-                    <TabsTrigger value="archived">Archived</TabsTrigger>
-                  </TabsList>
-               </Tabs>
-               <Button variant="outline" size="icon" className="shrink-0">
-                  <Filter className="h-4 w-4" />
-               </Button>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 pb-8">
-            {posts.map((post) => (
-              <Card 
-                key={post.id} 
-                className="group cursor-pointer border-border/60 hover:border-primary/50 transition-all hover:shadow-md flex flex-col overflow-hidden"
-                onClick={() => handleEdit(post)}
-              >
-                 <div className="aspect-[16/9] relative overflow-hidden bg-muted">
-                    <img 
-                      src={post.coverImage} 
-                      alt={post.title} 
-                      className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute top-3 left-3 flex gap-2">
-                       <Badge variant={post.status === 'published' ? 'default' : 'secondary'} className="shadow-sm backdrop-blur-md">
-                          {post.status}
-                       </Badge>
-                    </div>
-                 </div>
-                 
-                 <CardHeader className="space-y-2 p-5">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                       <span className="font-medium text-foreground">{post.author}</span>
-                       <span>•</span>
-                       <span>{post.publishedAt}</span>
-                    </div>
-                    <CardTitle className="line-clamp-2 text-xl group-hover:text-primary transition-colors">
-                       {post.title}
-                    </CardTitle>
-                 </CardHeader>
-                 
-                 <CardContent className="p-5 pt-0 flex-1">
-                    <p className="text-muted-foreground text-sm line-clamp-2">
-                       {post.excerpt}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mt-4">
-                       {post.tags.map(tag => (
-                          <Badge key={tag} variant="outline" className="text-xs font-normal text-muted-foreground group-hover:border-primary/30 transition-colors">
-                             #{tag}
-                          </Badge>
-                       ))}
-                    </div>
-                 </CardContent>
+            <div className="h-6 w-px bg-border hidden sm:block" />
 
-                 <CardFooter className="p-5 pt-0 border-t border-border/40 mt-auto flex items-center justify-between text-xs text-muted-foreground bg-muted/5">
-                    <div className="flex items-center gap-4 py-3 w-full">
-                       <div className="flex items-center gap-1 min-w-[3rem]" title="Views">
-                          <Eye className="h-3.5 w-3.5" />
-                          <span>{post.views.toLocaleString()}</span>
-                       </div>
-                       <div className="flex items-center gap-1 min-w-[3rem]" title="Likes">
-                          <Heart className="h-3.5 w-3.5" />
-                          <span>{Math.floor(post.views * 0.15)}</span>
-                       </div>
-                       <div className="flex items-center gap-1 min-w-[3rem]" title="Comments">
-                          <MessageSquare className="h-3.5 w-3.5" />
-                          <span>{Math.floor(post.views * 0.05)}</span>
-                       </div>
-                    </div>
-                    <DropdownMenu>
-                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
-                             <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                       </DropdownMenuTrigger>
-                       <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(post); }}>Edit</DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => e.stopPropagation()}>View Analytics</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(post.id); }}>Delete</DropdownMenuItem>
-                       </DropdownMenuContent>
-                    </DropdownMenu>
-                 </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col h-[calc(100vh-4rem)] -m-6">
-          {/* Editor Header */}
-          <header className="flex items-center justify-between px-6 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-20">
-             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" onClick={() => setView("list")} className="gap-2 text-muted-foreground hover:text-foreground">
-                   <ArrowLeft className="h-4 w-4" /> Back
+            <Tabs
+              defaultValue="all"
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+              className="w-full sm:w-auto"
+            >
+              <TabsList className="bg-transparent p-0 gap-1">
+                <TabsTrigger
+                  value="all"
+                  className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3"
+                >
+                  All
+                </TabsTrigger>
+                <TabsTrigger
+                  value="published"
+                  className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-600 rounded-md px-3"
+                >
+                  Published
+                </TabsTrigger>
+                <TabsTrigger
+                  value="draft"
+                  className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-600 rounded-md px-3"
+                >
+                  Drafts
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="flex items-center gap-1 ml-auto">
+              <div className="bg-muted p-1 rounded-md flex">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLayoutMode("grid")}
+                  className={cn(
+                    "h-7 w-7 p-0 rounded-sm hover:bg-background",
+                    layoutMode === "grid" && "bg-background shadow-sm",
+                  )}
+                >
+                  <LayoutGrid className="h-4 w-4" />
                 </Button>
-                <div className="h-4 w-px bg-border hidden sm:block" />
-                <div className="flex items-center gap-2 text-sm text-muted-foreground hidden sm:flex">
-                   <span className="flex items-center gap-1.5">
-                      <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                      Unsaved changes
-                   </span>
-                </div>
-             </div>
-             
-             <div className="flex items-center gap-2">
-                {/* Analytics Popover */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="hidden sm:flex gap-2">
-                      <BarChart2 className="h-4 w-4 text-muted-foreground" />
-                      Analytics
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-80 p-0">
-                    <DropdownMenuLabel className="p-4 border-b">
-                      Post Performance
-                      <span className="block text-xs font-normal text-muted-foreground mt-1">Last 30 days</span>
-                    </DropdownMenuLabel>
-                    <div className="p-4 grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">Total Views</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl font-bold">1,245</span>
-                          <span className="text-xs text-emerald-500 flex items-center">
-                            <TrendingUp className="h-3 w-3 mr-0.5" /> 12%
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLayoutMode("list")}
+                  className={cn(
+                    "h-7 w-7 p-0 rounded-sm hover:bg-background",
+                    layoutMode === "list" && "bg-background shadow-sm",
+                  )}
+                >
+                  <ListIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Posts Grid/List */}
+          {filteredPosts.length > 0 ? (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              className={cn(
+                "grid gap-6 pb-8",
+                layoutMode === "grid"
+                  ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
+                  : "grid-cols-1",
+              )}
+            >
+              {filteredPosts.map((post) => (
+                <motion.div
+                  variants={itemVariants}
+                  key={post.id}
+                  layoutId={post.id}
+                >
+                  <Card
+                    className={cn(
+                      "group cursor-pointer border-border/60 hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5 flex overflow-hidden bg-card/50 backdrop-blur-sm",
+                      layoutMode === "grid"
+                        ? "flex-col h-full"
+                        : "flex-row h-48",
+                    )}
+                    onClick={() => handleEdit(post.id)}
+                  >
+                    <div
+                      className={cn(
+                        "relative overflow-hidden bg-muted",
+                        layoutMode === "grid"
+                          ? "aspect-[16/9] w-full"
+                          : "w-1/3 h-full",
+                      )}
+                    >
+                      <img
+                        src={post.coverImage}
+                        alt={post.title}
+                        className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute top-3 left-3 flex gap-2">
+                        <Badge
+                          className={cn(
+                            "shadow-sm backdrop-blur-md border-none",
+                            post.status === "published"
+                              ? "bg-emerald-500/90 hover:bg-emerald-500"
+                              : "bg-amber-500/90 hover:bg-amber-500",
+                          )}
+                        >
+                          {post.status === "published" ? "Published" : "Draft"}
+                        </Badge>
+                      </div>
+                      {layoutMode === "grid" && (
+                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 text-xs backdrop-blur-md bg-white/20 hover:bg-white/40 border-none text-white"
+                          >
+                            Quick Edit <ChevronRight className="ml-1 h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <CardHeader
+                        className={cn(
+                          "space-y-2",
+                          layoutMode === "list" ? "p-4 pb-2" : "p-5 pb-2",
+                        )}
+                      >
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground flex items-center gap-1">
+                            <Avatar className="h-4 w-4">
+                              <AvatarImage
+                                src={`https://api.dicebear.com/7.x/initials/svg?seed=${post.author}`}
+                              />
+                              <AvatarFallback>{post.author[0]}</AvatarFallback>
+                            </Avatar>
+                            {post.author}
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" /> {post.publishedAt}
                           </span>
                         </div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">Avg. Read Time</span>
-                        <div className="text-xl font-bold">4m 12s</div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">Likes</span>
-                        <div className="text-xl font-bold">186</div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">Shares</span>
-                        <div className="text-xl font-bold">42</div>
-                      </div>
+                        <CardTitle
+                          className={cn(
+                            "line-clamp-2 group-hover:text-primary transition-colors",
+                            layoutMode === "grid" ? "text-xl" : "text-lg",
+                          )}
+                        >
+                          {post.title}
+                        </CardTitle>
+                      </CardHeader>
+
+                      <CardContent
+                        className={cn(
+                          "flex-1",
+                          layoutMode === "list" ? "p-4 py-2" : "p-5 py-0",
+                        )}
+                      >
+                        <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
+                          {post.excerpt}
+                        </p>
+                        {layoutMode === "list" && (
+                          <div className="flex items-center gap-4 mt-3 pt-3 border-t text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3.5 w-3.5" />{" "}
+                              {post.views.toLocaleString()} views
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" /> {post.readTime}
+                            </span>
+                          </div>
+                        )}
+                        {layoutMode === "grid" && (
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {post.tags.slice(0, 3).map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="outline"
+                                className="text-xs font-normal text-muted-foreground group-hover:border-primary/30 transition-colors bg-muted/50"
+                              >
+                                #{tag}
+                              </Badge>
+                            ))}
+                            {post.tags.length > 3 && (
+                              <Badge
+                                variant="outline"
+                                className="text-xs font-normal text-muted-foreground"
+                              >
+                                +{post.tags.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+
+                      {layoutMode === "grid" && (
+                        <CardFooter className="p-5 pt-0 border-t border-border/40 mt-auto flex items-center justify-between text-xs text-muted-foreground bg-muted/5 h-12">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="flex items-center gap-1"
+                              title="Views"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>{post.views.toLocaleString()}</span>
+                            </div>
+                            <div
+                              className="flex items-center gap-1"
+                              title="Read time"
+                            >
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>{post.readTime}</span>
+                            </div>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              asChild
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 -mr-2 bg-transparent hover:bg-background/80"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(post.id);
+                                }}
+                              >
+                                <FileText className="mr-2 h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <BarChart2 className="mr-2 h-4 w-4" /> Analytics
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Share2 className="mr-2 h-4 w-4" /> Share
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(post.id);
+                                }}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </CardFooter>
+                      )}
                     </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <Sheet>
-                   <SheetTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                         <Settings className="h-4 w-4" />
-                      </Button>
-                   </SheetTrigger>
-                   <SheetContent className="w-[400px] sm:w-[540px]">
-                      <SheetHeader>
-                         <SheetTitle>Post Settings</SheetTitle>
-                         <SheetDescription>
-                            Configure metadata, SEO, and publishing options.
-                         </SheetDescription>
-                      </SheetHeader>
-                      <ScrollArea className="h-[calc(100vh-10rem)] pr-4 mt-6">
-                         <div className="space-y-8">
-                            <div className="space-y-4">
-                               <h3 className="text-sm font-medium flex items-center gap-2 text-primary">
-                                  <Globe className="h-4 w-4" /> General
-                               </h3>
-                               <div className="space-y-3">
-                                  <div className="grid gap-2">
-                                     <Label>URL Slug</Label>
-                                     <div className="flex">
-                                        <span className="flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm">/blog/</span>
-                                        <Input 
-                                          value={slug} 
-                                          onChange={(e) => setSlug(e.target.value)} 
-                                          className="rounded-l-none font-mono text-sm" 
-                                        />
-                                     </div>
-                                  </div>
-                                  <div className="grid gap-2">
-                                     <Label>Author</Label>
-                                     <Popover open={openAuthorSelect} onOpenChange={setOpenAuthorSelect}>
-                                        <PopoverTrigger asChild>
-                                          <Button variant="outline" role="combobox" aria-expanded={openAuthorSelect} className="w-full justify-between h-auto py-2">
-                                            <div className="flex items-center gap-2">
-                                              <Avatar className="h-6 w-6">
-                                                <AvatarImage src={selectedAuthor.avatar} />
-                                                <AvatarFallback>{selectedAuthor.name[0]}</AvatarFallback>
-                                              </Avatar>
-                                              <div className="flex flex-col items-start text-xs">
-                                                <span className="font-medium">{selectedAuthor.name}</span>
-                                                <span className="text-muted-foreground">{selectedAuthor.role}</span>
-                                              </div>
-                                            </div>
-                                            <MoreHorizontal className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                          </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[300px] p-0">
-                                          <Command>
-                                            <CommandInput placeholder="Search author..." />
-                                            <CommandList>
-                                              <CommandEmpty>No author found.</CommandEmpty>
-                                              <CommandGroup>
-                                                {AUTHORS.map((author) => (
-                                                  <CommandItem
-                                                    key={author.id}
-                                                    value={author.name}
-                                                    onSelect={() => {
-                                                      setSelectedAuthor(author);
-                                                      setOpenAuthorSelect(false);
-                                                    }}
-                                                  >
-                                                    <div className="flex items-center gap-2">
-                                                      <Avatar className="h-6 w-6">
-                                                        <AvatarImage src={author.avatar} />
-                                                        <AvatarFallback>{author.name[0]}</AvatarFallback>
-                                                      </Avatar>
-                                                      <div className="flex flex-col items-start text-xs">
-                                                        <span className="font-medium">{author.name}</span>
-                                                        <span className="text-muted-foreground">{author.role}</span>
-                                                      </div>
-                                                    </div>
-                                                    <Check
-                                                      className={cn(
-                                                        "ml-auto h-4 w-4",
-                                                        selectedAuthor.id === author.id ? "opacity-100" : "opacity-0"
-                                                      )}
-                                                    />
-                                                  </CommandItem>
-                                                ))}
-                                              </CommandGroup>
-                                            </CommandList>
-                                          </Command>
-                                        </PopoverContent>
-                                     </Popover>
-                                  </div>
-                                  <div className="grid gap-2">
-                                     <Label>Short Description (Excerpt)</Label>
-                                     <Textarea 
-                                        className="resize-none h-24" 
-                                        placeholder="Brief summary shown on blog cards..." 
-                                        value={excerpt}
-                                        onChange={(e) => setExcerpt(e.target.value)}
-                                     />
-                                     <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160 characters</p>
-                                  </div>
-                               </div>
-                            </div>
-
-                            <Separator />
-                            
-                            <div className="space-y-4">
-                               <h3 className="text-sm font-medium flex items-center gap-2 text-primary">
-                                  <MessageSquare className="h-4 w-4" /> Comments
-                               </h3>
-                               <div className="space-y-4">
-                                  {COMMENTS.map((comment) => (
-                                     <div key={comment.id} className="flex gap-3 text-sm border rounded-lg p-3 bg-muted/30">
-                                        <Avatar className="h-8 w-8">
-                                           <AvatarImage src={comment.avatar} />
-                                           <AvatarFallback>{comment.author[0]}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="space-y-1 flex-1">
-                                           <div className="flex items-center justify-between">
-                                              <span className="font-medium">{comment.author}</span>
-                                              <span className="text-xs text-muted-foreground">{comment.date}</span>
-                                           </div>
-                                           <p className="text-muted-foreground">{comment.content}</p>
-                                           <div className="flex items-center gap-2 pt-1">
-                                              <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                 <ThumbsUp className="h-3 w-3" />
-                                              </Button>
-                                              <span className="text-xs text-muted-foreground">{comment.likes}</span>
-                                           </div>
-                                        </div>
-                                     </div>
-                                  ))}
-                               </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-4">
-                               <h3 className="text-sm font-medium flex items-center gap-2 text-primary">
-                                  <ImageIcon className="h-4 w-4" /> Media
-                               </h3>
-                               <div className="grid gap-2">
-                                  <Label>Cover Image</Label>
-                                  <div className="aspect-video rounded-md border-2 border-dashed bg-muted flex flex-col items-center justify-center gap-2 hover:bg-muted/70 transition-colors cursor-pointer relative group overflow-hidden">
-                                     <img src={selectedPost?.coverImage || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000"} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-40" />
-                                     <div className="relative z-10 flex flex-col items-center gap-2">
-                                        <UploadCloud className="h-8 w-8 text-muted-foreground" />
-                                        <span className="text-xs text-muted-foreground font-medium">Click to upload or drag & drop</span>
-                                     </div>
-                                  </div>
-                               </div>
-                            </div>
-                            
-                            <div className="pt-4 flex justify-between">
-                               <Button variant="destructive" onClick={() => {
-                                  if (selectedPost) {
-                                    handleDelete(selectedPost.id);
-                                    setView("list");
-                                  }
-                               }}>
-                                  <Trash2 className="mr-2 h-4 w-4" /> Delete Post
-                               </Button>
-                            </div>
-
-                         </div>
-                      </ScrollArea>
-                   </SheetContent>
-                </Sheet>
-                <Button variant="ghost" size="icon">
-                   <Eye className="h-4 w-4" />
-                </Button>
-                <div className="h-4 w-px bg-border" />
-                <Button variant="outline" className="gap-2" onClick={() => {
-                   setStatus("draft");
-                   handleSave();
-                }}>
-                   <Save className="h-4 w-4" /> Save Draft
-                </Button>
-                <Button className="gap-2" onClick={() => {
-                   setStatus("published");
-                   handleSave();
-                }}>
-                   Publish
-                </Button>
-             </div>
-          </header>
-          
-          <ScrollArea className="flex-1 bg-muted/10">
-             <div className="max-w-4xl mx-auto py-12 px-6">
-                
-                {/* Editor Content */}
-                <div className="space-y-8">
-                   <div className="space-y-4">
-                      <div className="group relative">
-                         <div className="aspect-[21/9] rounded-xl overflow-hidden bg-muted border shadow-sm">
-                            <img 
-                               src={selectedPost?.coverImage || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000"} 
-                               className="w-full h-full object-cover transition-opacity hover:opacity-90"
-                            />
-                            <Button variant="secondary" size="sm" className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                               Change Cover
-                            </Button>
-                         </div>
-                      </div>
-                      
-                      <Input 
-                        className="text-4xl font-extrabold border-none px-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground/50 bg-transparent" 
-                        placeholder="Post Title" 
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                      />
-                      
-                      <div className="flex items-center gap-4 text-muted-foreground pb-4 border-b">
-                         <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                               <AvatarImage src={selectedAuthor.avatar} />
-                               <AvatarFallback>{selectedAuthor.name[0]}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm font-medium text-foreground">{selectedAuthor.name}</span>
-                         </div>
-                         <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-                         <span className="text-sm">{new Date().toLocaleDateString()}</span>
-                      </div>
-                   </div>
-
-                   <RichTextEditor minHeight="min-h-[500px]" className="border-none bg-transparent" />
-                </div>
-             </div>
-          </ScrollArea>
-        </div>
-      )}
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-xl bg-muted/30"
+            >
+              <div className="bg-muted p-4 rounded-full mb-4">
+                <Search className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium">No posts found</h3>
+              <p className="text-muted-foreground text-sm max-w-xs text-center mt-1">
+                We couldn't find any posts matching your search filters. Try
+                refreshing or create a new post.
+              </p>
+              <Button
+                variant="link"
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                }}
+                className="mt-2"
+              >
+                Clear Filters
+              </Button>
+            </motion.div>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </AdminLayout>
   );
 }
