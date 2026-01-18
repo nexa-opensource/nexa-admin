@@ -1,0 +1,58 @@
+2.2. Quản lý Blog & Tài liệu (Documentation)
+
+Sử dụng cấu hình MDX hoặc Rich Text để lưu trữ nội dung kỹ thuật.
+
+Blog Collection: Bao gồm các trường: Title, Slug, Author (Relationship), Publish Date, Main Image, Content (JSON/Rich Text), và SEO Meta.   
+
+Documentation Collection: Sử dụng cấu trúc phân cấp (Parent/Child) để tạo cây menu. Mỗi trang cần có trường category (ví dụ: Getting Started, Components) và trường nội dung hỗ trợ code block.
+
+2.3. Quản lý Themes & Design Tokens
+
+Portal cần một giao diện trực quan để sửa đổi các biến CSS mà không cần code.
+
+Theme Collection: Quản lý các bộ giá trị như Primary Color, Accent Color, Radius, và các trạng thái Success/Warning/Error.   
+
+Token Editor: Một trang tùy chỉnh trong Admin Panel cho phép ghi đè các biến :root trực tiếp và xem trước kết quả (Preview).   
+
+2.4. Quản lý Pricing (Bảng giá)
+
+Quản trị viên có thể điều chỉnh giá và tính năng của các gói dịch vụ một cách linh hoạt.
+
+Plan Collection:
+
+Name: Hobby, Pro, Enterprise.    
+
+Price: Lưu giá cho cả Monthly và Yearly.    
+
+Value Metric: Đơn vị tính phí (ví dụ: "per user", "per 1k API calls").    
+
+Features: Danh sách các tính năng (sử dụng array of strings).    
+
+CTA Label: Nội dung nút (ví dụ: "Get Started").
+
+3. Thiết kế giao diện quản trị (Admin UI)
+Giao diện quản trị nên tập trung vào hiệu suất và khả năng điều hướng nhanh.
+
+Sidebar Navigation: Phân chia rõ ràng các phân khu: Content (Blog, Docs), Engineering (Components, Registry), Business (Pricing, Showcases), và Settings (Themes, Users).
+
+Dashboard Overview: Màn hình chính hiển thị các chỉ số quan trọng (KPIs) như: Tổng số component, lượt cài đặt qua CLI, số bài viết blog mới và doanh thu từ gói Pro.
+
+Live Preview: Tích hợp cửa sổ xem trước cho các bài viết Blog và Documentation để đảm bảo hiển thị đúng trước khi xuất bản.
+
+4. Quy trình vận hành & Tự động hóa
+Cập nhật Component: Khi dev cập nhật mã nguồn trong Admin Panel, hệ thống tự động chạy script shadcn build để tạo lại tệp registry.json và đẩy lên CDN.   
+
+Phê duyệt nội dung: Triển khai workflow phê duyệt (Draft -> Review -> Published). Khi một bài hướng dẫn mới được xuất bản, portal có thể tự động gửi thông báo qua Slack/Email cho cộng đồng.
+
+Quản lý Showcases: Cung cấp một form cho người dùng gửi dự án. Admin sẽ duyệt qua giao diện "Inbox" trong portal trước khi dự án được hiển thị trên trang chủ.
+
+5. Bảo mật và Phân quyền (RBAC)
+Cần thiết lập quyền hạn truy cập nghiêm ngặt dựa trên vai trò:
+
+Developer: Quyền quản lý Components và Registry.
+
+Content Writer: Quyền viết Blog và Documentation.
+
+Admin: Toàn quyền quản lý người dùng, cấu hình Theme và Pricing.   
+
+MFA: Bắt buộc xác thực đa yếu tố cho tất cả tài khoản quản trị để bảo vệ hệ thống khỏi các cuộc tấn công chiếm quyền điều khiển.
