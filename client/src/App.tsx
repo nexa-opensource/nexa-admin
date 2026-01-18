@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import BlogPage from "@/pages/content/blog";
+import DocsPage from "@/pages/content/docs";
+import ComponentsPage from "@/pages/engineering/components";
+import ShowcasesPage from "@/pages/business/showcases";
 import ThemePage from "@/pages/settings/theme";
 import PricingPage from "@/pages/business/pricing";
 
@@ -14,13 +17,14 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/content/blog" component={BlogPage} />
+      <Route path="/content/docs" component={DocsPage} />
+      <Route path="/engineering/components" component={ComponentsPage} />
+      <Route path="/business/showcases" component={ShowcasesPage} />
       <Route path="/settings/theme" component={ThemePage} />
       <Route path="/business/pricing" component={PricingPage} />
+      
       {/* Fallbacks for routes not fully implemented yet but in sidebar */}
-      <Route path="/content/docs" component={NotFound} />
-      <Route path="/engineering/components" component={NotFound} />
-      <Route path="/engineering/registry" component={NotFound} />
-      <Route path="/business/showcases" component={NotFound} />
+      <Route path="/engineering/registry" component={ComponentsPage} /> {/* Reuse Components page for now */}
       <Route path="/settings/users" component={NotFound} />
       
       <Route component={NotFound} />

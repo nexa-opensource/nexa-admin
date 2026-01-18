@@ -1,102 +1,121 @@
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { TokenPreview } from "@/components/settings/TokenPreview";
-import { RefreshCw, Save } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
+
+const COLORS = [
+  { name: "Zinc", class: "bg-zinc-950" },
+  { name: "Red", class: "bg-red-500" },
+  { name: "Rose", class: "bg-rose-500" },
+  { name: "Orange", class: "bg-orange-500" },
+  { name: "Green", class: "bg-emerald-500" },
+  { name: "Blue", class: "bg-blue-500" },
+  { name: "Yellow", class: "bg-yellow-400" },
+  { name: "Violet", class: "bg-violet-500" },
+];
 
 export default function ThemePage() {
+  const [activeColor, setActiveColor] = useState("Zinc");
+  const [mode, setMode] = useState<"light" | "dark">("light");
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Theme & Tokens</h1>
-            <p className="text-muted-foreground">Manage your design system tokens and variables.</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <RefreshCw className="mr-2 h-4 w-4" /> Reset
-            </Button>
-            <Button>
-              <Save className="mr-2 h-4 w-4" /> Save Changes
-            </Button>
-          </div>
+      <div className="space-y-8">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Theme Customizer</h1>
+          <p className="text-muted-foreground text-lg">Customize your UI experience. Pick a style and color for your components.</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Global Colors</CardTitle>
-                <CardDescription>Base brand colors for the system.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Primary Color</Label>
-                  <div className="flex gap-2">
-                    <div className="size-10 rounded border bg-primary shadow-sm" />
-                    <Input defaultValue="262 83% 58%" className="font-mono" />
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main Preview Area */}
+          <div className="lg:col-span-3 border rounded-xl p-6 bg-background shadow-sm">
+             <div className="mb-8">
+               <h2 className="text-2xl font-bold mb-2">Dashboard</h2>
+               <p className="text-muted-foreground">Overview of your project activity.</p>
+             </div>
+             
+             <div className="space-y-8">
+                <div className="grid grid-cols-2 gap-4">
+                   <Card>
+                      <CardHeader className="pb-2">
+                         <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                         <div className="text-2xl font-bold">$45,231.89</div>
+                         <p className="text-xs text-muted-foreground mt-1">+20.1% from last month</p>
+                      </CardContent>
+                   </Card>
+                   <Card>
+                      <CardHeader className="pb-2">
+                         <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                         <div className="text-2xl font-bold">+2350</div>
+                         <p className="text-xs text-muted-foreground mt-1">+180.1% from last month</p>
+                      </CardContent>
+                   </Card>
                 </div>
-                <div className="space-y-2">
-                  <Label>Accent Color</Label>
-                  <div className="flex gap-2">
-                    <div className="size-10 rounded border bg-accent shadow-sm" />
-                    <Input defaultValue="240 5% 96%" className="font-mono" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Layout & Spacing</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Base Radius</Label>
-                  <div className="flex items-center gap-4">
-                     <Input type="range" min="0" max="20" defaultValue="8" className="flex-1" />
-                     <span className="font-mono text-sm w-12">0.5rem</span>
-                  </div>
+                <div className="border rounded-lg p-6 bg-card">
+                   <h3 className="font-medium mb-4">Form Elements</h3>
+                   <div className="flex flex-wrap gap-4">
+                      <Button>Primary Button</Button>
+                      <Button variant="secondary">Secondary</Button>
+                      <Button variant="outline">Outline</Button>
+                      <Button variant="destructive">Destructive</Button>
+                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Status Colors</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Success</Label>
-                  <div className="flex gap-2">
-                    <div className="size-8 rounded border bg-emerald-500 shadow-sm" />
-                    <Input defaultValue="#10B981" className="font-mono h-8" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Warning</Label>
-                  <div className="flex gap-2">
-                    <div className="size-8 rounded border bg-amber-500 shadow-sm" />
-                    <Input defaultValue="#F59E0B" className="font-mono h-8" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Error</Label>
-                  <div className="flex gap-2">
-                    <div className="size-8 rounded border bg-destructive shadow-sm" />
-                    <Input defaultValue="#EF4444" className="font-mono h-8" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+             </div>
           </div>
 
-          <div className="lg:col-span-2">
-            <TokenPreview />
+          {/* Controls Sidebar */}
+          <div className="space-y-8">
+             <div className="space-y-3">
+                <Label className="text-base font-semibold">Color</Label>
+                <div className="grid grid-cols-3 gap-2">
+                   {COLORS.map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => setActiveColor(color.name)}
+                        className={cn(
+                           "flex items-center gap-2 px-2 py-1.5 rounded-md border text-xs font-medium transition-all hover:bg-muted",
+                           activeColor === color.name ? "border-primary ring-1 ring-primary" : "border-border"
+                        )}
+                      >
+                         <span className={cn("size-3 rounded-full shrink-0", color.class)} />
+                         {color.name}
+                      </button>
+                   ))}
+                </div>
+             </div>
+
+             <div className="space-y-3">
+                <Label className="text-base font-semibold">Mode</Label>
+                <div className="bg-muted p-1 rounded-lg grid grid-cols-2 gap-1">
+                   <button 
+                     onClick={() => setMode("light")}
+                     className={cn(
+                        "flex items-center justify-center gap-2 py-1.5 text-sm font-medium rounded-md transition-all",
+                        mode === "light" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                     )}
+                   >
+                      <Sun className="h-4 w-4" /> Light
+                   </button>
+                   <button 
+                     onClick={() => setMode("dark")}
+                     className={cn(
+                        "flex items-center justify-center gap-2 py-1.5 text-sm font-medium rounded-md transition-all",
+                        mode === "dark" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                     )}
+                   >
+                      <Moon className="h-4 w-4" /> Dark
+                   </button>
+                </div>
+             </div>
           </div>
         </div>
       </div>
