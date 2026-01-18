@@ -25,39 +25,6 @@ export interface DocItem {
   status: "published" | "draft";
 }
 
-export interface ComponentItem {
-  id: string;
-  name: string;
-  description: string;
-  category: "Base" | "Composite" | "Layout";
-  status: "stable" | "beta" | "deprecated";
-  previewImage?: string;
-  codeSnippet?: string;
-}
-
-export interface ShowcaseItem {
-  id: string;
-  title: string;
-  description: string;
-  author: string;
-  url: string;
-  image: string;
-  status: "approved" | "pending" | "rejected";
-  tags: string[];
-  submittedAt: string;
-}
-
-export interface Plan {
-  id: string;
-  name: string;
-  description: string;
-  priceMonthly: number;
-  priceYearly: number;
-  features: string[];
-  popular?: boolean;
-  cta: string;
-}
-
 export interface NewsletterSubscriber {
   id: string;
   email: string;
@@ -75,6 +42,22 @@ export interface EmailCampaign {
   openRate?: number;
   clickRate?: number;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "editor" | "viewer";
+  status: "active" | "inactive";
+  lastActive: string;
+  avatar?: string;
+}
+
+export const USERS: User[] = [
+  { id: "1", name: "Sarah Chen", email: "sarah@portal.dev", role: "admin", status: "active", lastActive: "2 mins ago", avatar: "https://github.com/shadcn.png" },
+  { id: "2", name: "Marcus Johnson", email: "marcus@portal.dev", role: "editor", status: "active", lastActive: "1 hour ago", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus" },
+  { id: "3", name: "Alex Tech", email: "alex@portal.dev", role: "viewer", status: "inactive", lastActive: "3 days ago", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" },
+];
 
 export const BLOG_POSTS: BlogPost[] = [
   { 
@@ -126,82 +109,6 @@ export const DOCS_ITEMS: DocItem[] = [
   { id: "5", title: "Hooks", slug: "hooks", category: "Examples", status: "draft" },
 ];
 
-export const COMPONENTS: ComponentItem[] = [
-  { id: "1", name: "Card", description: "Container for grouping related content.", category: "Base", status: "stable" },
-  { id: "2", name: "Button", description: "Triggers an event or action.", category: "Base", status: "stable" },
-  { id: "3", name: "Input", description: "Form controls for user input.", category: "Base", status: "stable" },
-  { id: "4", name: "Badge", description: "Displays a status or value.", category: "Base", status: "stable" },
-  { id: "5", name: "Avatar", description: "Image element for user profiles.", category: "Base", status: "stable" },
-  { id: "6", name: "Interactive", description: "Components with state.", category: "Composite", status: "beta" },
-];
-
-export const SHOWCASES: ShowcaseItem[] = [
-  { 
-    id: "1", 
-    title: "TaskMaster Pro", 
-    description: "A collaborative project management tool for remote teams.", 
-    author: "Alice Freeman", 
-    url: "https://taskmaster.app",
-    image: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&q=80&w=500",
-    status: "approved",
-    tags: ["Productivity", "SaaS", "Dashboard"],
-    submittedAt: "2024-01-15"
-  },
-  { 
-    id: "2", 
-    title: "FinDash Analytics", 
-    description: "Real-time financial dashboard with complex data visualization.", 
-    author: "Bob Smith", 
-    url: "https://findash.io",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=500",
-    status: "approved",
-    tags: ["Finance", "Data Viz", "Enterprise"],
-    submittedAt: "2024-01-14"
-  },
-  { 
-    id: "3", 
-    title: "Creative Portfolio", 
-    description: "Minimalist portfolio template for digital artists.", 
-    author: "John Doe", 
-    url: "https://portfolio.design",
-    image: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=500",
-    status: "pending",
-    tags: ["Portfolio", "Creative", "Minimal"],
-    submittedAt: "2024-01-18"
-  },
-];
-
-export const PLANS: Plan[] = [
-  {
-    id: "hobby",
-    name: "Hobby",
-    description: "Perfect for personal projects.",
-    priceMonthly: 0,
-    priceYearly: 0,
-    features: ["Access to all core components", "Community support", "Basic theming"],
-    cta: "Get Started"
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    description: "For professional developers.",
-    priceMonthly: 15,
-    priceYearly: 144, // $12/mo equivalent
-    features: ["Everything in Hobby", "Advanced charts & maps", "Multiple themes", "Priority email support", "Removing attribution"],
-    cta: "Subscribe Now",
-    popular: true
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    description: "For large teams and organizations.",
-    priceMonthly: 49,
-    priceYearly: 470,
-    features: ["Everything in Pro", "Unlimited projects", "Dedicated support channel", "Custom component requests", "SLA & Contracts"],
-    cta: "Contact Sales"
-  }
-];
-
 export const SUBSCRIBERS: NewsletterSubscriber[] = [
   { id: "1", email: "alice@example.com", status: "active", subscribedAt: "2024-01-15", source: "Blog Footer" },
   { id: "2", email: "bob.dev@gmail.com", status: "active", subscribedAt: "2024-01-16", source: "Popup" },
@@ -218,10 +125,10 @@ export const CAMPAIGNS: EmailCampaign[] = [
 ];
 
 export const KPI_STATS = [
-  { label: "Total Components", value: "142", change: "+12%", icon: Component },
-  { label: "CLI Installs", value: "8,943", change: "+24%", icon: LayoutTemplate },
-  { label: "Revenue (MRR)", value: "$45,231", change: "+20.1%", icon: CreditCard },
-  { label: "Active Users", value: "2,350", change: "+180.1%", icon: Users },
+  { label: "Total Subscribers", value: "2,643", change: "+12%", icon: Users },
+  { label: "Blog Views", value: "12.5k", change: "+24%", icon: FileText },
+  { label: "Campaigns Sent", value: "48", change: "+5", icon: Mail },
+  { label: "Avg Open Rate", value: "42%", change: "+2.1%", icon: BookOpen },
 ];
 
 export const NAV_ITEMS = [
@@ -245,24 +152,9 @@ export const NAV_ITEMS = [
     ]
   },
   {
-    section: "Engineering",
-    items: [
-      { title: "Components", icon: Component, href: "/engineering/components" },
-      { title: "Registry", icon: LayoutTemplate, href: "/engineering/registry" },
-    ]
-  },
-  {
-    section: "Business",
-    items: [
-      { title: "Pricing", icon: CreditCard, href: "/business/pricing" },
-      { title: "Showcases", icon: Presentation, href: "/business/showcases" },
-    ]
-  },
-  {
     section: "Settings",
     items: [
-      { title: "Theme & Tokens", icon: Paintbrush, href: "/settings/theme" },
-      { title: "Users & Roles", icon: Users, href: "/settings/users" },
+      { title: "User Management", icon: Users, href: "/settings/users" },
     ]
   },
 ];
