@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BLOG_POSTS, BlogPost } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, MoreHorizontal, Calendar, Clock, ArrowRight, ArrowLeft, Save, Eye, Settings, Globe, Image as ImageIcon, Tag, Hash, Share2, UploadCloud } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Calendar, Clock, ArrowRight, ArrowLeft, Save, Eye, Settings, Globe, Image as ImageIcon, Tag, Hash, Share2, UploadCloud, Heart, MessageSquare, BarChart2, TrendingUp } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { RichTextEditor } from "@/components/content/RichTextEditor";
@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 export default function BlogPage() {
   const [view, setView] = useState<"list" | "edit">("list");
@@ -111,14 +112,18 @@ export default function BlogPage() {
                  </CardContent>
 
                  <CardFooter className="p-5 pt-0 border-t border-border/40 mt-auto flex items-center justify-between text-xs text-muted-foreground bg-muted/5">
-                    <div className="flex items-center gap-4 py-3">
-                       <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-4 py-3 w-full">
+                       <div className="flex items-center gap-1 min-w-[3rem]" title="Views">
                           <Eye className="h-3.5 w-3.5" />
                           <span>{post.views.toLocaleString()}</span>
                        </div>
-                       <div className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span>{post.readTime}</span>
+                       <div className="flex items-center gap-1 min-w-[3rem]" title="Likes">
+                          <Heart className="h-3.5 w-3.5" />
+                          <span>{Math.floor(post.views * 0.15)}</span>
+                       </div>
+                       <div className="flex items-center gap-1 min-w-[3rem]" title="Comments">
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          <span>{Math.floor(post.views * 0.05)}</span>
                        </div>
                     </div>
                     <DropdownMenu>
@@ -129,7 +134,7 @@ export default function BlogPage() {
                        </DropdownMenuTrigger>
                        <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleEdit(post)}>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                          <DropdownMenuItem>View Analytics</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
                        </DropdownMenuContent>
@@ -157,6 +162,45 @@ export default function BlogPage() {
              </div>
              
              <div className="flex items-center gap-2">
+                {/* Analytics Popover */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="hidden sm:flex gap-2">
+                      <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                      Analytics
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80 p-0">
+                    <DropdownMenuLabel className="p-4 border-b">
+                      Post Performance
+                      <span className="block text-xs font-normal text-muted-foreground mt-1">Last 30 days</span>
+                    </DropdownMenuLabel>
+                    <div className="p-4 grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground">Total Views</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl font-bold">1,245</span>
+                          <span className="text-xs text-emerald-500 flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-0.5" /> 12%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground">Avg. Read Time</span>
+                        <div className="text-xl font-bold">4m 12s</div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground">Likes</span>
+                        <div className="text-xl font-bold">186</div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground">Shares</span>
+                        <div className="text-xl font-bold">42</div>
+                      </div>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <Sheet>
                    <SheetTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -319,7 +363,7 @@ export default function BlogPage() {
                    </div>
 
                    <div className="min-h-[500px]">
-                      <RichTextEditor className="border-none shadow-none" minHeight="min-h-[60vh]" />
+                      <RichTextEditor className="border-none shadow-none bg-transparent" minHeight="min-h-[60vh]" />
                    </div>
                 </div>
 
